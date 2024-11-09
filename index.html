@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Freedom Wall</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        #freedomWall {
+            width: 800px;
+            height: 600px;
+            background-image: url('https://i.ibb.co/NrYfRH5/2059a4d4d5010cb0e9601e92be35c273-removebg-preview.png');
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            flex-wrap: wrap;
+            padding: 10px;
+            position: relative;
+            box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            margin-top: 80px;
+            background-repeat: no-repeat;
+            overflow-y: auto;
+            background-color: #9eafb6;
+        }
+        .sticky-note {
+            width: 100px;
+            height: 100px;
+            padding: 10px;
+            margin: 10px;
+            position: relative;
+            word-wrap: break-word;
+            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+            border-radius: 5px;
+            background-color: rgba(255, 255, 255, 0.8);
+            font-weight: bold;
+            font-size: 12px;
+        }
+        .sticky-note .pin {
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 15px;
+            height: 15px;
+            background-color: white;
+            border-radius: 50%;
+            border: 2px solid #999;
+        }
+        .delete-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            color: red;
+        }
+        #noteInput {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        textarea {
+            width: 300px;
+            height: 80px;
+            padding: 10px;
+            font-size: 14px;
+            border: 2px solid #ccc;
+            border-radius: 5px;
+            background-color: rgba(255, 255, 255, 0.8);
+            margin-right: 10px;
+        }
+        .color-picker {
+            position: relative;
+            margin-right: 10px;
+        }
+        .color-picker .color-circle {
+            width: 30px;
+            height: 30px;
+            background-color: black;
+            border-radius: 50%;
+            cursor: pointer;
+            position: relative;
+        }
+        .color-picker .color-options {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: -150px;
+            flex-wrap: wrap;
+            background-color: white;
+            padding: 10px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+        }
+        .color-picker .color-options .color {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            margin: 5px;
+            cursor: pointer;
+            border: 2px solid black;
+        }
+        .color-picker.active .color-options {
+            display: flex;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="noteInput">
+        <textarea id="newNoteText" placeholder="Write your note here..."></textarea>
+        
+        <div class="color-picker">
+            <div class="color-circle"></div>
+            <div class="color-options">
+                <div class="color" data-color="#2aa4f5" style="background-color: #2aa4f5;"></div>
+                <div class="color" data-color="#3ebd5c" style="background-color: #3ebd5c;"></div>
+                <div class="color" data-color="#ffffff" style="background-color: #ffffff;"></div>
+                <div class="color" data-color="#ff9a4d" style="background-color: #ff9a4d;"></div>
+                <div class="color" data-color="#ff9cf2" style="background-color: #ff9cf2;"></div>
+                <div class="color" data-color="#faf0e6" style="background-color: #faf0e6;"></div>
+                <div class="color" data-color="#deb607" style="background-color: #deb607;"></div>
+            </div>
+        </div>
+
+        <button onclick="addStickyNote()">Add Note</button>
+    </div>
+    
+    <div id="freedomWall">
+        <!-- Sticky notes will appear here -->
+    </div>
+
+    <script>
+        let selectedColor = '#ffffff';
+
+        // Load notes from localStorage when the page loads
+        window.onload = function() {
+            loadNotes();
+        };
+
+        // Load sticky notes from localStorage
+        function loadNotes() {
+            const notes = JSON.parse(localStorage.getItem('stickyNotes')) || [];
+            notes.forEach(note => createStickyNote(note.text, note.color, false));
+        }
+
+        // Create a sticky note element
+        function createStickyNote(text, color, saveToLocalStorage = true) {
+            const wall = document.getElementById('freedomWall');
+            const stickyNote = document.createElement('div');
+            stickyNote.classList.add('sticky-note');
+            stickyNote.style.backgroundColor = color;
+
+            const pin = document.createElement('div');
+            pin.classList.add('pin');
+            stickyNote.appendChild(pin);
+
+            const deleteBtn = document.createElement('span');
+            deleteBtn.classList.add('delete-btn');
+            deleteBtn.textContent = 'x';
+            deleteBtn.onclick = function() { deleteNote(stickyNote, text); };
+            stickyNote.appendChild(deleteBtn);
+
+            const noteText = document.createElement('p');
+            noteText.textContent = text;
+            stickyNote.appendChild(noteText);
+
+            wall.appendChild(stickyNote);
+
+            // Save to localStorage if needed
+            if (saveToLocalStorage) saveNoteToLocalStorage(text, color);
+        }
+
+        // Add new sticky note
+        function addStickyNote() {
+            const noteText = document.getElementById('newNoteText').value.trim();
+            if (!noteText) {
+                alert('Please write something before adding a note.');
+                return;
+            }
+
+            createStickyNote(noteText, selectedColor);
+            document.getElementById('newNoteText').value = ''; // Clear textarea after adding note
+        }
+
+        // Save note to localStorage
+        function saveNoteToLocalStorage(text, color) {
+            const notes = JSON.parse(localStorage.getItem('stickyNotes')) || [];
+            notes.push({ text, color });
+            localStorage.setItem('stickyNotes', JSON.stringify(notes));
+        }
+
+        // Delete sticky note
+        function deleteNote(noteElement, text) {
+            let notes = JSON.parse(localStorage.getItem('stickyNotes')) || [];
+            notes = notes.filter(n => n.text !== text);
+            localStorage.setItem('stickyNotes', JSON.stringify(notes));
+            noteElement.remove();
+        }
+
+        // Toggle color options when clicking the black circle
+        document.querySelector('.color-circle').addEventListener('click', function() {
+            this.parentElement.classList.toggle('active');
+        });
+
+        // Update selected color when choosing one of the color options
+        document.querySelectorAll('.color').forEach(function(colorDiv) {
+            colorDiv.addEventListener('click', function() {
+                selectedColor = this.getAttribute('data-color');
+                document.querySelector('.color-circle').style.backgroundColor = selectedColor;
+                document.querySelector('.color-picker').classList.remove('active');
+            });
+        });
+    </script>
+
+</body>
+</html>
